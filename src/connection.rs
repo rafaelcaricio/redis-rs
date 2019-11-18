@@ -224,7 +224,10 @@ fn url_to_tcp_connection_info(
 }
 
 #[cfg(unix)]
-fn url_to_unix_connection_info(url: url::Url) -> RedisResult<ConnectionInfo> {
+fn url_to_unix_connection_info(
+    url: url::Url,
+    tls: Option<TlsConnectionInfo>,
+) -> RedisResult<ConnectionInfo> {
     Ok(ConnectionInfo {
         addr: Box::new(ConnectionAddr::Unix(unwrap_or!(
             url.to_file_path().ok(),
@@ -266,7 +269,9 @@ impl IntoConnectionInfo for url::Url {
                 };
                 url_to_tcp_connection_info(self, tls_connection_info)
             }
-            "unix" | "redis+unix" => url_to_unix_connection_info(self),
+            "unix" | "redis+unix" => {
+                url_to_unix_connection_info(self, Some(TlsConnectionInfo::default()))
+            }
             _ => fail!((
                 ErrorKind::InvalidClientConfig,
                 "URL provided is not a redis URL"
